@@ -1,0 +1,8 @@
+unixodbc 
+unixodbc-dev 
+freetds-dev 
+freetds-bin 
+tdsodbc
+nano
+vim
+telnet

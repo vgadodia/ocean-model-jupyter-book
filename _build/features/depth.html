@@ -1,0 +1,684 @@
+---
+interact_link: content/features/depth.ipynb
+kernel_name: python3
+has_widgets: false
+title: |-
+  Depth
+prev_page:
+  url: /features/notebooks.html
+  title: |-
+    Notebooks
+next_page:
+  url: 
+  title: |-
+    
+comment: "***PROGRAMMATICALLY GENERATED, DO NOT EDIT. SEE ORIGINAL FILES IN /content***"
+---
+<main class="jupyter-page">
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Reformat-netCDF4-File-for-Function-Call">Reformat netCDF4 File for Function Call<a class="anchor-link" href="#Reformat-netCDF4-File-for-Function-Call"> </a></h2>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install netCDF4
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install xarray
+<span class="kn">import</span> <span class="nn">netCDF4</span>
+<span class="kn">import</span> <span class="nn">opedia</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">db</span>
+<span class="kn">import</span> <span class="nn">common</span> <span class="k">as</span> <span class="nn">com</span>
+<span class="kn">import</span> <span class="nn">climatology</span> <span class="k">as</span> <span class="nn">clim</span>
+<span class="kn">import</span> <span class="nn">subset</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">output_notebook</span>
+<span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span>
+<span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">column</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">DatetimeTickFormatter</span>
+<span class="kn">from</span> <span class="nn">bokeh.palettes</span> <span class="k">import</span> <span class="n">all_palettes</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">HoverTool</span>
+<span class="kn">from</span> <span class="nn">bokeh.embed</span> <span class="k">import</span> <span class="n">components</span>
+<span class="kn">import</span> <span class="nn">jupyterInline</span> <span class="k">as</span> <span class="nn">jup</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="k">if</span> <span class="n">jup</span><span class="o">.</span><span class="n">jupytered</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm_notebook</span> <span class="k">as</span> <span class="n">tqdm</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="NetCDF-Compatible-Function">NetCDF Compatible Function<a class="anchor-link" href="#NetCDF-Compatible-Function"> </a></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">xarrayPlotDepthProfile</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">msize</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">clr</span><span class="o">=</span><span class="s1">&#39;orangered&#39;</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lw</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mi">800</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="mi">400</span>
+    <span class="n">TOOLS</span> <span class="o">=</span> <span class="s1">&#39;pan,wheel_zoom,zoom_in,zoom_out,box_zoom, undo,redo,reset,tap,save,box_select,poly_select,lasso_select&#39;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;overall&#39;</span><span class="p">):</span>
+        <span class="c1">#if not db.hasField(tables[i], &#39;depth&#39;):</span>
+        <span class="c1">#    continue</span>
+        <span class="c1">#if not iterative(tables[i]):    </span>
+        <span class="c1">#    depths, y, yErr = depthProfile(tables[i], variables[i], dt1, dt2, lat1, lat2, lon1, lon2, depth1, depth2, fname, exportDataFlag)</span>
+        <span class="c1">#else:    </span>
+        <span class="c1">#    depths, y, yErr = depthProfile_iterative(tables[i], variables[i], dt1, dt2, lat1, lat2, lon1, lon2, depth1, depth2, fname, exportDataFlag)</span>
+        
+        <span class="n">table</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">TIME</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">),</span> <span class="n">LAT_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">),</span> <span class="n">LON_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">),</span> <span class="n">DEP_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">))</span>
+        <span class="n">depths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;DEP_C&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        
+        <span class="n">varList</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]][:]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">varList</span><span class="p">[</span><span class="n">varList</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;NaN&#39;</span><span class="p">)</span>
+        <span class="n">varList</span> <span class="o">=</span> <span class="n">varList</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">][:][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="n">varData</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="nb">list</span> <span class="ow">in</span> <span class="n">varList</span><span class="p">:</span>
+            <span class="n">varData</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">list</span><span class="p">))</span>
+        
+        <span class="n">output_notebook</span><span class="p">()</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">TOOLS</span><span class="p">,</span> <span class="n">toolbar_location</span><span class="o">=</span><span class="s2">&quot;above&quot;</span><span class="p">,</span> <span class="n">plot_width</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">h</span><span class="p">)</span>
+        <span class="c1">#p1.xaxis.axis_label = &#39;Depth&#39;</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; [PLACEHOLDER]&#39;</span>
+        <span class="n">leg</span> <span class="o">=</span> <span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">cr</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">depths</span><span class="p">,</span> <span class="n">varData</span><span class="p">,</span> <span class="n">fill_color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">hover_fill_color</span><span class="o">=</span><span class="s2">&quot;firebrick&quot;</span><span class="p">,</span> <span class="n">fill_alpha</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">hover_alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">line_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hover_line_color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="n">leg</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">msize</span><span class="p">)</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">depths</span><span class="p">,</span> <span class="n">varData</span><span class="p">,</span> <span class="n">line_color</span><span class="o">=</span><span class="n">clr</span><span class="p">,</span> <span class="n">line_width</span><span class="o">=</span><span class="n">lw</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="n">leg</span><span class="p">)</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">add_tools</span><span class="p">(</span><span class="n">HoverTool</span><span class="p">(</span><span class="n">tooltips</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">renderers</span><span class="o">=</span><span class="p">[</span><span class="n">cr</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;hline&#39;</span><span class="p">))</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+    <span class="n">dirPath</span> <span class="o">=</span> <span class="s1">&#39;embed/&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dirPath</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dirPath</span><span class="p">)</span>        
+  <span class="c1">#  if not inline:      ## if jupyter is not the caller</span>
+  <span class="c1">#      output_file(dirPath + fname + &quot;.html&quot;, title=&quot;Depth Profile&quot;)</span>
+    <span class="n">show</span><span class="p">(</span><span class="n">column</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+    <span class="k">return</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Helper-Functions-(for-both)">Helper Functions (for both)<a class="anchor-link" href="#Helper-Functions-(for-both)"> </a></h4>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">iterative</span><span class="p">(</span><span class="n">table</span><span class="p">):</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">it</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;tblDarwin&#39;</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">it</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;tblPisces&#39;</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">it</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">it</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">depthProfile</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">depthProfile</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exportDataFlag</span><span class="p">:</span>
+        <span class="n">exportData</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">field</span> <span class="o">+</span> <span class="s1">&#39;_std&#39;</span><span class="p">],</span> <span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>    
+    <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">field</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="n">field</span> <span class="o">+</span> <span class="s1">&#39;_std&#39;</span><span class="p">]</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">depthProfile_iterative</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">db</span><span class="o">.</span><span class="n">isClimatology</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="ow">and</span> <span class="n">db</span><span class="o">.</span><span class="n">hasField</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">):</span>
+        <span class="n">m1</span> <span class="o">=</span> <span class="n">clim</span><span class="o">.</span><span class="n">timeToMonth</span><span class="p">(</span><span class="n">dt1</span><span class="p">)</span>
+        <span class="n">m2</span> <span class="o">=</span> <span class="n">clim</span><span class="o">.</span><span class="n">timeToMonth</span><span class="p">(</span><span class="n">dt2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m2</span><span class="o">&gt;</span><span class="n">m1</span><span class="p">:</span>
+            <span class="n">timesteps</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timesteps</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span> <span class="n">m1</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">timesteps</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;2016-</span><span class="si">%2.2d</span><span class="s1">-01&#39;</span> <span class="o">%</span> <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">timesteps</span><span class="p">]</span>    
+    <span class="k">elif</span> <span class="n">table</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;tblPisces&#39;</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>        <span class="c1"># currently (Nov 2018) only Pisces table has a calendar table. all datasets have to have a calendar  table. we can then remove thw else: clause below </span>
+        <span class="n">calTable</span> <span class="o">=</span> <span class="n">table</span><span class="o">+</span><span class="s1">&#39;_Calendar&#39;</span>
+        <span class="n">timesteps</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">timesBetween</span><span class="p">(</span><span class="n">calTable</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">)</span>   
+    <span class="k">else</span><span class="p">:</span>        
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dt2</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dt1</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">timesteps</span> <span class="o">=</span> <span class="p">[(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">dt1</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">x</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">delta</span><span class="o">.</span><span class="n">days</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+
+    <span class="n">zs</span><span class="p">,</span> <span class="n">ys</span><span class="p">,</span> <span class="n">y_stds</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">timesteps</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">depthProfile</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">field</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">zs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">])</span>
+        <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">field</span><span class="p">])</span>
+        <span class="n">y_stds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">field</span> <span class="o">+</span> <span class="s1">&#39;_std&#39;</span><span class="p">])</span>
+
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+    <span class="n">y_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">y_stds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">exportDataFlag</span><span class="p">:</span>
+        <span class="n">exportData</span><span class="p">(</span><span class="n">depth</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_std</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>    
+    <span class="k">return</span> <span class="n">depth</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_std</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Testing---NetCDF-Compatible-Function">Testing - NetCDF Compatible Function<a class="anchor-link" href="#Testing---NetCDF-Compatible-Function"> </a></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xFile</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;http://3.88.71.225:80/thredds/dodsC/las/id-a1d60eba44/data_usr_local_tomcat_content_cbiomes_20190510_20_darwin_v0.2_cs510_darwin_v0.2_cs510_nutrients.nc.jnl&#39;</span><span class="p">)</span>
+
+<span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">xFile</span><span class="p">]</span>     <span class="c1"># see catalog.csv  for the complete list of tables and variable names</span>
+<span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;O2&#39;</span><span class="p">]</span>
+<span class="n">startDate</span> <span class="o">=</span> <span class="s1">&#39;2010-04-30&#39;</span>   <span class="c1"># PISCES is a weekly model, and here we are using monthly climatology of Darwin model</span>
+<span class="n">endDate</span> <span class="o">=</span> <span class="s1">&#39;2010-04-30&#39;</span>
+<span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">24</span>
+<span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">170</span><span class="p">,</span> <span class="o">-</span><span class="mi">150</span>
+<span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1500</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;DEP&#39;</span>
+<span class="n">exportDataFlag</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># True if you you want to download data</span>
+
+<span class="n">xarrayPlotDepthProfile</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+
+
+
+ 
+ 
+<div id="d513575b-c456-454e-8234-38628f9c73bf"></div>
+<div class="output_subarea output_widget_view ">
+<script type="text/javascript">
+var element = $('#d513575b-c456-454e-8234-38628f9c73bf');
+</script>
+<script type="application/vnd.jupyter.widget-view+json">
+{"model_id": "3076cdc9ab714f85b3269a42b7f835bc", "version_major": 2, "version_minor": 0}
+</script>
+</div>
+
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+
+    <div class="bk-root">
+        <a href="https://bokeh.pydata.org" target="_blank" class="bk-logo bk-logo-small bk-logo-notebook"></a>
+        <span id="1192">Loading BokehJS ...</span>
+    </div>
+</div>
+
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+
+
+
+<div id="2296868f-3924-4d89-ae3f-190b53544a40"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#2296868f-3924-4d89-ae3f-190b53544a40');
+
+(function(root) {
+  function now() {
+    return new Date();
+  }
+
+  var force = true;
+
+  if (typeof (root._bokeh_onload_callbacks) === "undefined" || force === true) {
+    root._bokeh_onload_callbacks = [];
+    root._bokeh_is_loading = undefined;
+  }
+
+  var JS_MIME_TYPE = 'application/javascript';
+  var HTML_MIME_TYPE = 'text/html';
+  var EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json';
+  var CLASS_NAME = 'output_bokeh rendered_html';
+
+  /**
+   * Render data to the DOM node
+   */
+  function render(props, node) {
+    var script = document.createElement("script");
+    node.appendChild(script);
+  }
+
+  /**
+   * Handle when an output is cleared or removed
+   */
+  function handleClearOutput(event, handle) {
+    var cell = handle.cell;
+
+    var id = cell.output_area._bokeh_element_id;
+    var server_id = cell.output_area._bokeh_server_id;
+    // Clean up Bokeh references
+    if (id != null && id in Bokeh.index) {
+      Bokeh.index[id].model.document.clear();
+      delete Bokeh.index[id];
+    }
+
+    if (server_id !== undefined) {
+      // Clean up Bokeh references
+      var cmd = "from bokeh.io.state import curstate; print(curstate().uuid_to_server['" + server_id + "'].get_sessions()[0].document.roots[0]._id)";
+      cell.notebook.kernel.execute(cmd, {
+        iopub: {
+          output: function(msg) {
+            var id = msg.content.text.trim();
+            if (id in Bokeh.index) {
+              Bokeh.index[id].model.document.clear();
+              delete Bokeh.index[id];
+            }
+          }
+        }
+      });
+      // Destroy server and session
+      var cmd = "import bokeh.io.notebook as ion; ion.destroy_server('" + server_id + "')";
+      cell.notebook.kernel.execute(cmd);
+    }
+  }
+
+  /**
+   * Handle when a new output is added
+   */
+  function handleAddOutput(event, handle) {
+    var output_area = handle.output_area;
+    var output = handle.output;
+
+    // limit handleAddOutput to display_data with EXEC_MIME_TYPE content only
+    if ((output.output_type != "display_data") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
+      return
+    }
+
+    var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
+
+    if (output.metadata[EXEC_MIME_TYPE]["id"] !== undefined) {
+      toinsert[toinsert.length - 1].firstChild.textContent = output.data[JS_MIME_TYPE];
+      // store reference to embed id on output_area
+      output_area._bokeh_element_id = output.metadata[EXEC_MIME_TYPE]["id"];
+    }
+    if (output.metadata[EXEC_MIME_TYPE]["server_id"] !== undefined) {
+      var bk_div = document.createElement("div");
+      bk_div.innerHTML = output.data[HTML_MIME_TYPE];
+      var script_attrs = bk_div.children[0].attributes;
+      for (var i = 0; i < script_attrs.length; i++) {
+        toinsert[toinsert.length - 1].firstChild.setAttribute(script_attrs[i].name, script_attrs[i].value);
+      }
+      // store reference to server id on output_area
+      output_area._bokeh_server_id = output.metadata[EXEC_MIME_TYPE]["server_id"];
+    }
+  }
+
+  function register_renderer(events, OutputArea) {
+
+    function append_mime(data, metadata, element) {
+      // create a DOM node to render to
+      var toinsert = this.create_output_subarea(
+        metadata,
+        CLASS_NAME,
+        EXEC_MIME_TYPE
+      );
+      this.keyboard_manager.register_events(toinsert);
+      // Render to node
+      var props = {data: data, metadata: metadata[EXEC_MIME_TYPE]};
+      render(props, toinsert[toinsert.length - 1]);
+      element.append(toinsert);
+      return toinsert
+    }
+
+    /* Handle when an output is cleared or removed */
+    events.on('clear_output.CodeCell', handleClearOutput);
+    events.on('delete.Cell', handleClearOutput);
+
+    /* Handle when a new output is added */
+    events.on('output_added.OutputArea', handleAddOutput);
+
+    /**
+     * Register the mime type and append_mime function with output_area
+     */
+    OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
+      /* Is output safe? */
+      safe: true,
+      /* Index of renderer in `output_area.display_order` */
+      index: 0
+    });
+  }
+
+  // register the mime type if in Jupyter Notebook environment and previously unregistered
+  if (root.Jupyter !== undefined) {
+    var events = require('base/js/events');
+    var OutputArea = require('notebook/js/outputarea').OutputArea;
+
+    if (OutputArea.prototype.mime_types().indexOf(EXEC_MIME_TYPE) == -1) {
+      register_renderer(events, OutputArea);
+    }
+  }
+
+  
+  if (typeof (root._bokeh_timeout) === "undefined" || force === true) {
+    root._bokeh_timeout = Date.now() + 5000;
+    root._bokeh_failed_load = false;
+  }
+
+  var NB_LOAD_WARNING = {'data': {'text/html':
+     "<div style='background-color: #fdd'>\n"+
+     "<p>\n"+
+     "BokehJS does not appear to have successfully loaded. If loading BokehJS from CDN, this \n"+
+     "may be due to a slow or bad network connection. Possible fixes:\n"+
+     "</p>\n"+
+     "<ul>\n"+
+     "<li>re-rerun `output_notebook()` to attempt to load from CDN again, or</li>\n"+
+     "<li>use INLINE resources instead, as so:</li>\n"+
+     "</ul>\n"+
+     "<code>\n"+
+     "from bokeh.resources import INLINE\n"+
+     "output_notebook(resources=INLINE)\n"+
+     "</code>\n"+
+     "</div>"}};
+
+  function display_loaded() {
+    var el = document.getElementById("1192");
+    if (el != null) {
+      el.textContent = "BokehJS is loading...";
+    }
+    if (root.Bokeh !== undefined) {
+      if (el != null) {
+        el.textContent = "BokehJS " + root.Bokeh.version + " successfully loaded.";
+      }
+    } else if (Date.now() < root._bokeh_timeout) {
+      setTimeout(display_loaded, 100)
+    }
+  }
+
+
+  function run_callbacks() {
+    try {
+      root._bokeh_onload_callbacks.forEach(function(callback) { callback() });
+    }
+    finally {
+      delete root._bokeh_onload_callbacks
+    }
+    console.info("Bokeh: all callbacks have finished");
+  }
+
+  function load_libs(js_urls, callback) {
+    root._bokeh_onload_callbacks.push(callback);
+    if (root._bokeh_is_loading > 0) {
+      console.log("Bokeh: BokehJS is being loaded, scheduling callback at", now());
+      return null;
+    }
+    if (js_urls == null || js_urls.length === 0) {
+      run_callbacks();
+      return null;
+    }
+    console.log("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
+    root._bokeh_is_loading = js_urls.length;
+    for (var i = 0; i < js_urls.length; i++) {
+      var url = js_urls[i];
+      var s = document.createElement('script');
+      s.src = url;
+      s.async = false;
+      s.onreadystatechange = s.onload = function() {
+        root._bokeh_is_loading--;
+        if (root._bokeh_is_loading === 0) {
+          console.log("Bokeh: all BokehJS libraries loaded");
+          run_callbacks()
+        }
+      };
+      s.onerror = function() {
+        console.warn("failed to load library " + url);
+      };
+      console.log("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.getElementsByTagName("head")[0].appendChild(s);
+    }
+  };var element = document.getElementById("1192");
+  if (element == null) {
+    console.log("Bokeh: ERROR: autoload.js configured with elementid '1192' but no matching script tag was found. ")
+    return false;
+  }
+
+  var js_urls = ["https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js", "https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.4.min.js", "https://cdn.pydata.org/bokeh/release/bokeh-tables-1.0.4.min.js", "https://cdn.pydata.org/bokeh/release/bokeh-gl-1.0.4.min.js"];
+
+  var inline_js = [
+    function(Bokeh) {
+      Bokeh.set_log_level("info");
+    },
+    
+    function(Bokeh) {
+      
+    },
+    function(Bokeh) {
+      console.log("Bokeh: injecting CSS: https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css");
+      Bokeh.embed.inject_css("https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css");
+      console.log("Bokeh: injecting CSS: https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.4.min.css");
+      Bokeh.embed.inject_css("https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.4.min.css");
+      console.log("Bokeh: injecting CSS: https://cdn.pydata.org/bokeh/release/bokeh-tables-1.0.4.min.css");
+      Bokeh.embed.inject_css("https://cdn.pydata.org/bokeh/release/bokeh-tables-1.0.4.min.css");
+    }
+  ];
+
+  function run_inline_js() {
+    
+    if ((root.Bokeh !== undefined) || (force === true)) {
+      for (var i = 0; i < inline_js.length; i++) {
+        inline_js[i].call(root, root.Bokeh);
+      }if (force === true) {
+        display_loaded();
+      }} else if (Date.now() < root._bokeh_timeout) {
+      setTimeout(run_inline_js, 100);
+    } else if (!root._bokeh_failed_load) {
+      console.log("Bokeh: BokehJS failed to load within specified timeout.");
+      root._bokeh_failed_load = true;
+    } else if (force !== true) {
+      var cell = $(document.getElementById("1192")).parents('.cell').data().cell;
+      cell.output_area.append_execute_result(NB_LOAD_WARNING)
+    }
+
+  }
+
+  if (root._bokeh_is_loading === 0) {
+    console.log("Bokeh: BokehJS loaded, going straight to plotting");
+    run_inline_js();
+  } else {
+    load_libs(js_urls, function() {
+      console.log("Bokeh: BokehJS plotting callback run at", now());
+      run_inline_js();
+    });
+  }
+}(window));
+</script>
+</div>
+
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>BokehUserWarning: ColumnDataSource&#39;s columns must be of the same length. Current lengths: (&#39;x&#39;, 33), (&#39;y&#39;, 40)
+BokehUserWarning: ColumnDataSource&#39;s columns must be of the same length. Current lengths: (&#39;x&#39;, 33), (&#39;y&#39;, 40)
+</pre>
+</div>
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+</pre>
+</div>
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+
+
+
+
+
+
+  <div class="bk-root" id="93d6437a-bdce-4501-b51c-c6fc6de43db1" data-root-id="1284"></div>
+
+</div>
+
+</div>
+</div>
+<div class="jb_output_wrapper }}">
+<div class="output_area">
+
+
+
+
+<div id="74946842-82be-4256-b6f4-f97c009a09ee"></div>
+<div class="output_subarea output_javascript ">
+<script type="text/javascript">
+var element = $('#74946842-82be-4256-b6f4-f97c009a09ee');
+(function(root) {
+  function embed_document(root) {
+    
+  var docs_json = {"b85546e9-b351-4a93-bea9-2f2e9cdb51c7":{"roots":{"references":[{"attributes":{"children":[{"id":"1193","subtype":"Figure","type":"Plot"}]},"id":"1284","type":"Column"},{"attributes":{},"id":"1256","type":"BasicTickFormatter"},{"attributes":{},"id":"1218","type":"RedoTool"},{"attributes":{"active_drag":"auto","active_inspect":"auto","active_multi":null,"active_scroll":"auto","active_tap":"auto","tools":[{"id":"1212","type":"PanTool"},{"id":"1213","type":"WheelZoomTool"},{"id":"1214","type":"ZoomInTool"},{"id":"1215","type":"ZoomOutTool"},{"id":"1216","type":"BoxZoomTool"},{"id":"1217","type":"UndoTool"},{"id":"1218","type":"RedoTool"},{"id":"1219","type":"ResetTool"},{"id":"1220","type":"TapTool"},{"id":"1221","type":"SaveTool"},{"id":"1222","type":"BoxSelectTool"},{"id":"1223","type":"PolySelectTool"},{"id":"1224","type":"LassoSelectTool"},{"id":"1282","type":"HoverTool"}]},"id":"1225","type":"Toolbar"},{"attributes":{},"id":"1258","type":"BasicTickFormatter"},{"attributes":{"callback":null,"mode":"hline","renderers":[{"id":"1251","type":"GlyphRenderer"}],"tooltips":null},"id":"1282","type":"HoverTool"},{"attributes":{"dimension":1,"plot":{"id":"1193","subtype":"Figure","type":"Plot"},"ticker":{"id":"1208","type":"BasicTicker"}},"id":"1211","type":"Grid"},{"attributes":{},"id":"1217","type":"UndoTool"},{"attributes":{"callback":null,"overlay":{"id":"1243","type":"PolyAnnotation"}},"id":"1224","type":"LassoSelectTool"},{"attributes":{"overlay":{"id":"1229","type":"BoxAnnotation"}},"id":"1216","type":"BoxZoomTool"},{"attributes":{},"id":"1208","type":"BasicTicker"},{"attributes":{},"id":"1221","type":"SaveTool"},{"attributes":{"axis_label":"O2 [PLACEHOLDER]","formatter":{"id":"1258","type":"BasicTickFormatter"},"plot":{"id":"1193","subtype":"Figure","type":"Plot"},"ticker":{"id":"1208","type":"BasicTicker"}},"id":"1207","type":"LinearAxis"},{"attributes":{},"id":"1276","type":"UnionRenderers"},{"attributes":{},"id":"1215","type":"ZoomOutTool"},{"attributes":{"data_source":{"id":"1265","type":"ColumnDataSource"},"glyph":{"id":"1266","type":"Line"},"hover_glyph":null,"muted_glyph":null,"nonselection_glyph":{"id":"1267","type":"Line"},"selection_glyph":null,"view":{"id":"1269","type":"CDSView"}},"id":"1268","type":"GlyphRenderer"},{"attributes":{"plot":{"id":"1193","subtype":"Figure","type":"Plot"},"ticker":{"id":"1203","type":"BasicTicker"}},"id":"1206","type":"Grid"},{"attributes":{"bottom_units":"screen","fill_alpha":{"value":0.5},"fill_color":{"value":"lightgrey"},"left_units":"screen","level":"overlay","line_alpha":{"value":1.0},"line_color":{"value":"black"},"line_dash":[4,4],"line_width":{"value":2},"plot":null,"render_mode":"css","right_units":"screen","top_units":"screen"},"id":"1229","type":"BoxAnnotation"},{"attributes":{},"id":"1307","type":"UnionRenderers"},{"attributes":{"label":{"value":"O2"},"renderers":[{"id":"1251","type":"GlyphRenderer"},{"id":"1268","type":"GlyphRenderer"}]},"id":"1264","type":"LegendItem"},{"attributes":{"line_alpha":0.1,"line_color":"#1f77b4","line_width":2,"x":{"field":"x"},"y":{"field":"y"}},"id":"1267","type":"Line"},{"attributes":{},"id":"1308","type":"Selection"},{"attributes":{"callback":null},"id":"1220","type":"TapTool"},{"attributes":{},"id":"1277","type":"Selection"},{"attributes":{"callback":null,"overlay":{"id":"1237","type":"BoxAnnotation"}},"id":"1222","type":"BoxSelectTool"},{"attributes":{},"id":"1200","type":"LinearScale"},{"attributes":{"source":{"id":"1265","type":"ColumnDataSource"}},"id":"1269","type":"CDSView"},{"attributes":{"fill_alpha":{"value":0.5},"fill_color":{"value":"lightgrey"},"level":"overlay","line_alpha":{"value":1.0},"line_color":{"value":"black"},"line_dash":[4,4],"line_width":{"value":2},"plot":null,"xs_units":"screen","ys_units":"screen"},"id":"1243","type":"PolyAnnotation"},{"attributes":{},"id":"1214","type":"ZoomInTool"},{"attributes":{},"id":"1198","type":"LinearScale"},{"attributes":{"formatter":{"id":"1256","type":"BasicTickFormatter"},"plot":{"id":"1193","subtype":"Figure","type":"Plot"},"ticker":{"id":"1203","type":"BasicTicker"}},"id":"1202","type":"LinearAxis"},{"attributes":{"fill_alpha":{"value":0.25},"fill_color":{"value":"grey"},"line_color":{"value":null},"size":{"units":"screen","value":25},"x":{"field":"x"},"y":{"field":"y"}},"id":"1248","type":"Circle"},{"attributes":{"fill_alpha":{"value":0.5},"fill_color":{"value":"lightgrey"},"level":"overlay","line_alpha":{"value":1.0},"line_color":{"value":"black"},"line_dash":[4,4],"line_width":{"value":2},"plot":null,"xs_units":"screen","ys_units":"screen"},"id":"1240","type":"PolyAnnotation"},{"attributes":{"callback":null,"data":{"x":{"__ndarray__":"AAAAAAAAFEAAAAAAAAAuQAAAAAAAADlAAAAAAACAQUAAAAAAAIBGQAAAAAAAgEtAAAAAAABAUEACAADgUcBSQAAAAKCZQVVA/v//fxTGV0ASAAAA11NaQP7//x+u91xABwAAoJnJX0D+//8frndhQPz//z8KT2NA8///v8yMZUAPAAAghVdoQPn//1+41mtA/v//H4UXcED8//8/4b5yQPz//z/h6nVA/P//P+GeeUD+//8fhdd9QP7//x+uRYFABAAAQOHVg0AEAABAM5OGQAAAAIDCc4lAAAAAgOttjEAsAACAPXmPQBYAAMCeR5FACwAA4CPWkkALAADg0WiUQPX//5+ZBJZA","dtype":"float64","shape":[33]},"y":[211.8267822265625,211.65109252929688,212.6079559326172,212.755859375,212.22100830078125,212.20169067382812,213.27052307128906,213.30490112304688,213.04815673828125,212.6594696044922,212.3119354248047,212.33631896972656,213.33279418945312,213.88973999023438,213.1968231201172,213.7020721435547,213.75399780273438,213.88619995117188,213.7925567626953,213.57492065429688,213.24000549316406,213.18710327148438,213.30532836914062,212.6626434326172,212.0533447265625,211.9556121826172,212.51547241210938,213.79583740234375,213.94407653808594,214.3064727783203,214.9408721923828,215.26719665527344,215.43307495117188,215.25596618652344,215.1244659423828,214.81898498535156,214.4152069091797,214.25094604492188,214.40328979492188,214.49493408203125]},"selected":{"id":"1308","type":"Selection"},"selection_policy":{"id":"1307","type":"UnionRenderers"}},"id":"1265","type":"ColumnDataSource"},{"attributes":{"callback":null},"id":"1194","type":"DataRange1d"},{"attributes":{"plot":null,"text":""},"id":"1253","type":"Title"},{"attributes":{"source":{"id":"1247","type":"ColumnDataSource"}},"id":"1252","type":"CDSView"},{"attributes":{"below":[{"id":"1202","type":"LinearAxis"}],"left":[{"id":"1207","type":"LinearAxis"}],"plot_height":400,"plot_width":800,"renderers":[{"id":"1202","type":"LinearAxis"},{"id":"1206","type":"Grid"},{"id":"1207","type":"LinearAxis"},{"id":"1211","type":"Grid"},{"id":"1229","type":"BoxAnnotation"},{"id":"1237","type":"BoxAnnotation"},{"id":"1240","type":"PolyAnnotation"},{"id":"1243","type":"PolyAnnotation"},{"id":"1263","type":"Legend"},{"id":"1251","type":"GlyphRenderer"},{"id":"1268","type":"GlyphRenderer"}],"title":{"id":"1253","type":"Title"},"toolbar":{"id":"1225","type":"Toolbar"},"toolbar_location":"above","x_range":{"id":"1194","type":"DataRange1d"},"x_scale":{"id":"1198","type":"LinearScale"},"y_range":{"id":"1196","type":"DataRange1d"},"y_scale":{"id":"1200","type":"LinearScale"}},"id":"1193","subtype":"Figure","type":"Plot"},{"attributes":{},"id":"1213","type":"WheelZoomTool"},{"attributes":{},"id":"1212","type":"PanTool"},{"attributes":{"data_source":{"id":"1247","type":"ColumnDataSource"},"glyph":{"id":"1248","type":"Circle"},"hover_glyph":{"id":"1250","type":"Circle"},"muted_glyph":null,"nonselection_glyph":{"id":"1249","type":"Circle"},"selection_glyph":null,"view":{"id":"1252","type":"CDSView"}},"id":"1251","type":"GlyphRenderer"},{"attributes":{"items":[{"id":"1264","type":"LegendItem"}],"plot":{"id":"1193","subtype":"Figure","type":"Plot"}},"id":"1263","type":"Legend"},{"attributes":{"callback":null,"data":{"x":{"__ndarray__":"AAAAAAAAFEAAAAAAAAAuQAAAAAAAADlAAAAAAACAQUAAAAAAAIBGQAAAAAAAgEtAAAAAAABAUEACAADgUcBSQAAAAKCZQVVA/v//fxTGV0ASAAAA11NaQP7//x+u91xABwAAoJnJX0D+//8frndhQPz//z8KT2NA8///v8yMZUAPAAAghVdoQPn//1+41mtA/v//H4UXcED8//8/4b5yQPz//z/h6nVA/P//P+GeeUD+//8fhdd9QP7//x+uRYFABAAAQOHVg0AEAABAM5OGQAAAAIDCc4lAAAAAgOttjEAsAACAPXmPQBYAAMCeR5FACwAA4CPWkkALAADg0WiUQPX//5+ZBJZA","dtype":"float64","shape":[33]},"y":[211.8267822265625,211.65109252929688,212.6079559326172,212.755859375,212.22100830078125,212.20169067382812,213.27052307128906,213.30490112304688,213.04815673828125,212.6594696044922,212.3119354248047,212.33631896972656,213.33279418945312,213.88973999023438,213.1968231201172,213.7020721435547,213.75399780273438,213.88619995117188,213.7925567626953,213.57492065429688,213.24000549316406,213.18710327148438,213.30532836914062,212.6626434326172,212.0533447265625,211.9556121826172,212.51547241210938,213.79583740234375,213.94407653808594,214.3064727783203,214.9408721923828,215.26719665527344,215.43307495117188,215.25596618652344,215.1244659423828,214.81898498535156,214.4152069091797,214.25094604492188,214.40328979492188,214.49493408203125]},"selected":{"id":"1277","type":"Selection"},"selection_policy":{"id":"1276","type":"UnionRenderers"}},"id":"1247","type":"ColumnDataSource"},{"attributes":{"fill_alpha":{"value":0.1},"fill_color":{"value":"#1f77b4"},"line_alpha":{"value":0.1},"line_color":{"value":"#1f77b4"},"size":{"units":"screen","value":25},"x":{"field":"x"},"y":{"field":"y"}},"id":"1249","type":"Circle"},{"attributes":{"fill_alpha":{"value":0.3},"fill_color":{"value":"firebrick"},"line_alpha":{"value":0.3},"line_color":{"value":"white"},"size":{"units":"screen","value":25},"x":{"field":"x"},"y":{"field":"y"}},"id":"1250","type":"Circle"},{"attributes":{},"id":"1219","type":"ResetTool"},{"attributes":{"callback":null,"overlay":{"id":"1240","type":"PolyAnnotation"}},"id":"1223","type":"PolySelectTool"},{"attributes":{},"id":"1203","type":"BasicTicker"},{"attributes":{"callback":null},"id":"1196","type":"DataRange1d"},{"attributes":{"bottom_units":"screen","fill_alpha":{"value":0.5},"fill_color":{"value":"lightgrey"},"left_units":"screen","level":"overlay","line_alpha":{"value":1.0},"line_color":{"value":"black"},"line_dash":[4,4],"line_width":{"value":2},"plot":null,"render_mode":"css","right_units":"screen","top_units":"screen"},"id":"1237","type":"BoxAnnotation"},{"attributes":{"line_color":"orangered","line_width":2,"x":{"field":"x"},"y":{"field":"y"}},"id":"1266","type":"Line"}],"root_ids":["1284"]},"title":"Bokeh Application","version":"1.0.4"}};
+  var render_items = [{"docid":"b85546e9-b351-4a93-bea9-2f2e9cdb51c7","roots":{"1284":"93d6437a-bdce-4501-b51c-c6fc6de43db1"}}];
+  root.Bokeh.embed.embed_items_notebook(docs_json, render_items);
+
+  }
+  if (root.Bokeh !== undefined) {
+    embed_document(root);
+  } else {
+    var attempts = 0;
+    var timer = setInterval(function(root) {
+      if (root.Bokeh !== undefined) {
+        embed_document(root);
+        clearInterval(timer);
+      }
+      attempts++;
+      if (attempts > 100) {
+        console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+        clearInterval(timer);
+      }
+    }, 10, root)
+  }
+})(window);
+</script>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+ 
+
+
+</main>

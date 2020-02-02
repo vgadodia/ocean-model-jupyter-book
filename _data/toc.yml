@@ -1,0 +1,125 @@
+# Each entry has the following schema:
+#
+# - title: mytitle   # Title of chapter or section
+#   url: /myurl  # URL of section relative to the /content/ folder.
+#   sections:  # Contains a list of more entries that make up the chapter's sections
+#   not_numbered: true  # if the section shouldn't have a number in the sidebar
+#     (e.g. Introduction or appendices)
+#   expand_sections: true  # if you'd like the sections of this chapter to always
+#     be expanded in the sidebar.
+#   external: true  # Whether the URL is an external link or points to content in the book
+#
+# Below are some special values that trigger specific behavior:
+# - search: true  # Will provide a link to a search page
+# - divider: true  # Will insert a divider in the sidebar
+# - header: My Header  # Will insert a header with no link in the sidebar
+#
+# ==============================
+# AUTOMATICALLY GENERATED TOC FILE.
+# You should review the contents of this file, re-order items as you wish,
+# and nest chapters in sections if you wish. The ======= symbols represent 
+# folder breaks.
+# 
+# See the demo `toc.yml` for the right structure to follow. You can 
+# generate a demo book by running `jupyter-book create mybook --demo`
+# ==============================
+
+# ===== NEW SECTION ========================================
+# - title: CBIOMES
+#   url: https://cbiomes.org
+#   external: true
+#   not_numbered: true
+
+# - divider: true
+
+- title: Introduction
+  url: /intro
+  not_numbered: true
+- title: About This Book
+  url: /about/aboutthisbook
+  not_numbered: true
+  sections:
+  - title: About the Datasets
+    url: /about/aboutdatasets
+  - title: About the Interactive Book
+    url: /about/aboutinteractivebooks
+
+- divider: true
+
+# ===== NEW SECTION ========================================
+- title: Overview
+  url: /01/overviewofmodelsandoutputrepositories
+  sections:
+  - title: LLC90 Model
+    url: /01/llc90model
+  - title: CS510 Model
+    url: /01/cs510model
+  - title: LLC4320 Model
+    url: /01/llc4320model
+
+# ===== NEW SECTION ========================================
+- title: LLC90 Plotting Examples
+  url: /02/llc90plottingexamples
+  sections:
+  - title: Regional Map
+    url: /02/regionalmap
+  - title: Histogram
+    url: /02/histogram
+  - title: Sectional Map
+    url: /02/sectionalmap
+  - title: Time Series
+    url: /02/timeseries
+  - title: XY plot
+    url: /02/xyplot
+
+# ===== NEW SECTION ========================================
+- title: CS510 Plotting Examples
+  url: /03/cs510plottingexamples
+  sections:
+  - title: Regional Map
+    url: /03/regionalmap
+  - title: Histogram
+    url: /03/histogram
+  - title: Sectional Map
+    url: /03/sectionalmap
+  - title: Time Series
+    url: /03/timeseries
+  - title: XY plot
+    url: /03/xyplot
+
+# ===== NEW SECTION ========================================
+- title: LLC4320 Plotting Examples
+  url: /04/llc4320plottingexamples
+  sections:
+  - title: Regional Map
+    url: /04/regionalmap
+  - title: Histogram
+    url: /04/histogram
+  - title: Sectional Map
+    url: /04/sectionalmap
+  - title: Time Series
+    url: /04/timeseries
+  - title: XY plot
+    url: /04/xyplot
+
+# ===== NEW SECTION ========================================
+- title: Demo Applications
+  url: /05/demoapplications
+  sections:
+  - title: Ecosystem Clustering Example
+    url: /05/ecosystemclusteringexample
+  - title: Standard Plots
+    url: /05/standardplots
+
+
+- title: Features
+  url: /features/features
+  sections:
+  - title: Markdown
+    url: /features/markdown
+  - title: Notebooks
+    url: /features/notebooks
+  - title: Depth
+    url: /features/depth
+
+    

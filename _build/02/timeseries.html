@@ -1,0 +1,141 @@
+---
+interact_link: content/02/timeseries.ipynb
+kernel_name: python3
+has_widgets: false
+title: |-
+  Time Series
+prev_page:
+  url: /02/sectionalmap.html
+  title: |-
+    Sectional Map
+next_page:
+  url: /02/xyplot.html
+  title: |-
+    XY plot
+comment: "***PROGRAMMATICALLY GENERATED, DO NOT EDIT. SEE ORIGINAL FILES IN /content***"
+---
+<main class="jupyter-page">
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Time-Series-Method">Time Series Method<a class="anchor-link" href="#Time-Series-Method"> </a></h1>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><img src="timeseries.png" alt=""></p>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Import-Functions">Import Functions<a class="anchor-link" href="#Import-Functions"> </a></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell tag_hide_input">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install netCDF4
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install xarray
+<span class="kn">import</span> <span class="nn">opedia</span>
+<span class="kn">import</span> <span class="nn">netCDF4</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">netCDF4</span> <span class="k">import</span> <span class="n">num2date</span><span class="p">,</span> <span class="n">date2num</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">db</span>
+<span class="kn">import</span> <span class="nn">common</span> <span class="k">as</span> <span class="nn">com</span>
+<span class="kn">import</span> <span class="nn">timeSeries</span> <span class="k">as</span> <span class="nn">TS</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">pi</span>
+<span class="kn">from</span> <span class="nn">bokeh.io</span> <span class="k">import</span> <span class="n">output_notebook</span>
+<span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span>
+<span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">column</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">DatetimeTickFormatter</span>
+<span class="kn">from</span> <span class="nn">bokeh.palettes</span> <span class="k">import</span> <span class="n">all_palettes</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">HoverTool</span>
+<span class="kn">from</span> <span class="nn">bokeh.embed</span> <span class="k">import</span> <span class="n">components</span>
+<span class="kn">import</span> <span class="nn">jupyterInline</span> <span class="k">as</span> <span class="nn">jup</span>
+<span class="k">if</span> <span class="n">jup</span><span class="o">.</span><span class="n">jupytered</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm_notebook</span> <span class="k">as</span> <span class="n">tqdm</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="o">%</span><span class="k">run</span> -i &#39;externalfunctions.py&#39;
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Testing-Space">Testing Space<a class="anchor-link" href="#Testing-Space"> </a></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#TESTS XARRAY IMPLEMENTATION</span>
+
+<span class="n">xFile</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;http://3.88.71.225:80/thredds/dodsC/las/id-a1d60eba44/data_usr_local_tomcat_content_cbiomes_20190510_20_darwin_v0.2_cs510_darwin_v0.2_cs510_nutrients.nc.jnl&#39;</span><span class="p">)</span>
+
+<span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">xFile</span><span class="p">]</span>    <span class="c1"># see catalog.csv  for the complete list of tables and variable names</span>
+<span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;O2&#39;</span><span class="p">]</span>                                        <span class="c1"># see catalog.csv  for the complete list of tables and variable names</span>
+<span class="n">startDate</span> <span class="o">=</span> <span class="s1">&#39;2000-12-31&#39;</span>
+<span class="n">endDate</span> <span class="o">=</span> <span class="s1">&#39;2001-12-31&#39;</span>
+<span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">30</span>
+<span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">160</span><span class="p">,</span> <span class="o">-</span><span class="mi">155</span>
+<span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;TS&#39;</span>
+<span class="n">exportDataFlag</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># True if you you want to download data</span>
+
+<span class="n">plotTSX</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+ 
+
+
+</main>

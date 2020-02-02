@@ -1,0 +1,285 @@
+---
+interact_link: content/03/regionalmap.ipynb
+kernel_name: python3
+has_widgets: false
+title: |-
+  Regional Map
+prev_page:
+  url: /03/cs510plottingexamples.html
+  title: |-
+    CS510 Plotting Examples
+next_page:
+  url: /03/histogram.html
+  title: |-
+    Histogram
+comment: "***PROGRAMMATICALLY GENERATED, DO NOT EDIT. SEE ORIGINAL FILES IN /content***"
+---
+<main class="jupyter-page">
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Regional-Map-Method">Regional Map Method<a class="anchor-link" href="#Regional-Map-Method"> </a></h1>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><img src="regionalmap.png" alt=""></p>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell tag_hide_input">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install netCDF4
+<span class="o">!{</span>sys.executable<span class="o">}</span> -m pip install xarray
+<span class="kn">import</span> <span class="nn">opedia</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">common</span> <span class="k">as</span> <span class="nn">com</span>
+<span class="kn">from</span> <span class="nn">opedia</span> <span class="k">import</span> <span class="n">plotRegional</span> <span class="k">as</span> <span class="n">REG</span>
+<span class="kn">import</span> <span class="nn">netCDF4</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">dateutil.parser</span> <span class="k">import</span> <span class="n">parse</span>
+<span class="kn">from</span> <span class="nn">bokeh.plotting</span> <span class="k">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">output_file</span>
+<span class="kn">from</span> <span class="nn">bokeh.layouts</span> <span class="k">import</span> <span class="n">column</span>
+<span class="kn">from</span> <span class="nn">bokeh.palettes</span> <span class="k">import</span> <span class="n">all_palettes</span>
+<span class="kn">from</span> <span class="nn">bokeh.models</span> <span class="k">import</span> <span class="n">HoverTool</span><span class="p">,</span> <span class="n">LinearColorMapper</span><span class="p">,</span> <span class="n">BasicTicker</span><span class="p">,</span> <span class="n">ColorBar</span><span class="p">,</span> <span class="n">DatetimeTickFormatter</span>
+<span class="kn">from</span> <span class="nn">bokeh.models.annotations</span> <span class="k">import</span> <span class="n">Title</span>
+<span class="kn">from</span> <span class="nn">bokeh.embed</span> <span class="k">import</span> <span class="n">components</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm_notebook</span> <span class="k">as</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">netCDF4</span> <span class="k">import</span> <span class="n">num2date</span><span class="p">,</span> <span class="n">date2num</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="NetCDF4-file(s)-to-read-from:">NetCDF4 file(s) to read from:<a class="anchor-link" href="#NetCDF4-file(s)-to-read-from:"> </a></h4>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xFile</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="s1">&#39;http://3.88.71.225:80/thredds/dodsC/las/id-a1d60eba44/data_usr_local_tomcat_content_cbiomes_20190510_20_darwin_v0.2_cs510_darwin_v0.2_cs510_nutrients.nc.jnl&#39;</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Parameters-(CDF4-tables,-variables-(with-respect-to-table),-time/longitude/latitude/depth-constraints):">Parameters (CDF4 tables, variables (with respect to table), time/longitude/latitude/depth constraints):<a class="anchor-link" href="#Parameters-(CDF4-tables,-variables-(with-respect-to-table),-time/longitude/latitude/depth-constraints):"> </a></h4>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">xFile</span><span class="p">]</span>
+<span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;O2&#39;</span><span class="p">]</span>
+<span class="n">startDate</span> <span class="o">=</span> <span class="s1">&#39;2016-04-30&#39;</span>
+<span class="n">endDate</span> <span class="o">=</span> <span class="s1">&#39;2017-04-30&#39;</span>
+<span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="mi">90</span>
+<span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">170</span>
+<span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span>
+<span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;regional&#39;</span>
+<span class="n">exportDataFlag</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Regional-Map-Function-(w/-respective-parameters)-:">Regional Map Function (w/ respective parameters) :<a class="anchor-link" href="#Regional-Map-Function-(w/-respective-parameters)-:"> </a></h4>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell tag_hide_input">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">regionalMap</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">variabels</span><span class="p">,</span> <span class="n">dt1</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;overall&#39;</span><span class="p">):</span>
+        
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]</span>
+        
+        <span class="n">toDateTime</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="s1">&#39;TIME&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_datetimeindex</span><span class="p">()</span>
+        <span class="n">tables</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;TIME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">toDateTime</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">TIME</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">),</span> <span class="n">LAT_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">),</span> <span class="n">LON_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">),</span> <span class="n">DEP_C</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">))</span>
+        
+        <span class="n">varData</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,:,:]</span><span class="o">.</span><span class="n">values</span>       
+        
+        <span class="n">lats</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;LAT_C&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">lons</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;LON_C&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lats</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">lons</span><span class="p">))</span>
+        
+        <span class="n">varData</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">varData</span><span class="p">[</span><span class="n">varData</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;NaN&#39;</span><span class="p">)</span>
+        <span class="n">varData</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">varData</span><span class="p">)]</span>
+        <span class="n">lats</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lats</span><span class="p">)]</span>
+        <span class="n">lons</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">lons</span><span class="p">)]</span>
+        
+        <span class="n">bokehMap</span><span class="p">(</span><span class="n">varData</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;regional&#39;</span><span class="p">,</span> <span class="n">lats</span><span class="p">,</span> <span class="n">lons</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;OTHER&#39;</span><span class="p">,</span> <span class="n">variables</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Bokeh-Map-Function-(w/-respective-parameters)-:">Bokeh Map Function (w/ respective parameters) :<a class="anchor-link" href="#Bokeh-Map-Function-(w/-respective-parameters)-:"> </a></h4>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell tag_hide_input">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">bokehMap</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">tables</span><span class="p">,</span> <span class="n">variabels</span><span class="p">):</span>
+    <span class="n">TOOLS</span><span class="o">=</span><span class="s2">&quot;crosshair,pan,zoom_in,wheel_zoom,zoom_out,box_zoom,reset,save,&quot;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">canvasRect</span><span class="p">(</span><span class="n">dw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">dh</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">]))</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">TOOLS</span><span class="p">,</span> <span class="n">toolbar_location</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">subject</span><span class="p">[</span><span class="n">ind</span><span class="p">],</span> <span class="n">plot_width</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">plot_height</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">x_range</span><span class="o">=</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">])),</span> <span class="n">y_range</span><span class="o">=</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">])))</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="s1">&#39;Longitude&#39;</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">axis_label</span> <span class="o">=</span> <span class="s1">&#39;Latitude&#39;</span>
+    
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">units</span>
+        
+        <span class="n">bounds</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">getBounds</span><span class="p">(</span><span class="n">variabels</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+        
+        <span class="n">paletteName</span> <span class="o">=</span> <span class="n">com</span><span class="o">.</span><span class="n">getPalette</span><span class="p">(</span><span class="n">variabels</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+        <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="n">low</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+        <span class="n">color_mapper</span> <span class="o">=</span> <span class="n">LinearColorMapper</span><span class="p">(</span><span class="n">palette</span><span class="o">=</span><span class="n">paletteName</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">high</span><span class="p">)</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">image</span><span class="p">(</span><span class="n">image</span><span class="o">=</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">ind</span><span class="p">]],</span> <span class="n">color_mapper</span><span class="o">=</span><span class="n">color_mapper</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">dw</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lon</span><span class="p">[</span><span class="n">ind</span><span class="p">]),</span> <span class="n">dh</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">lat</span><span class="p">[</span><span class="n">ind</span><span class="p">]))</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">add_tools</span><span class="p">(</span><span class="n">HoverTool</span><span class="p">(</span>
+            <span class="n">tooltips</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;longitude&#39;</span><span class="p">,</span> <span class="s1">&#39;$x&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;$y&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="n">variabels</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">+</span><span class="n">unit</span><span class="p">,</span> <span class="s1">&#39;@image&#39;</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;mouse&#39;</span>
+        <span class="p">))</span>
+        <span class="n">color_bar</span> <span class="o">=</span> <span class="n">ColorBar</span><span class="p">(</span><span class="n">color_mapper</span><span class="o">=</span><span class="n">color_mapper</span><span class="p">,</span> <span class="n">ticker</span><span class="o">=</span><span class="n">BasicTicker</span><span class="p">(),</span>
+                        <span class="n">label_standoff</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">border_line_color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">p1</span><span class="o">.</span><span class="n">add_layout</span><span class="p">(</span><span class="n">color_bar</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+       <span class="c1"># if not inline:      ## if jupyter is not the caller</span>
+       <span class="c1">#     dirPath = &#39;embed/&#39;</span>
+       <span class="c1">#     if not os.path.exists(dirPath):</span>
+       <span class="c1">#         os.makedirs(dirPath)        </span>
+       <span class="c1">#     output_file(dirPath + fname + &quot;.html&quot;, title=&quot;Regional Map&quot;)</span>
+        <span class="n">show</span><span class="p">(</span><span class="n">column</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+    <span class="k">return</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Testing-Space">Testing Space<a class="anchor-link" href="#Testing-Space"> </a></h3>
+</div>
+</div>
+</div>
+</div>
+
+<div class="jb_cell">
+
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">regionalMap</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">lon1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">depth1</span><span class="p">,</span> <span class="n">depth2</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">exportDataFlag</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+
+ 
+
+
+</main>
